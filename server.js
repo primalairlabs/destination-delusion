@@ -169,21 +169,23 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check for duplicate name
-    if (state.submissions.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-      socket.emit('error', 'This name has already been taken');
+    // Don't allow submissions after selection started
+    if (state.winner) {
+      socket.emit('error', 'Selection already completed');
       return;
     }
+    
+    // Check if this name already exists
+    const existingIndex = state.submissions.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
     
     // Check if this is Mäsi and no Mäsi exists yet
     if (name === 'Mäsi' && !state.maesi) {
       state.maesi = socket.id;
     }
     
-    // Generate insult
+    // Generate insult (new one each time, even for edits)
     const insult = generateInsult(city);
     
-    // Add submission
     const submission = {
       name,
       city,
@@ -192,11 +194,17 @@ io.on('connection', (socket) => {
       socketId: socket.id
     };
     
-    state.submissions.push(submission);
-    
-    // Broadcast to all clients
-    io.emit('stateUpdate', state);
-    io.emit('newSubmission', submission);
+    if (existingIndex !== -1) {
+      // Update existing submission
+      state.submissions[existingIndex] = submission;
+      io.emit('stateUpdate', state);
+      io.emit('submissionUpdated', submission);
+    } else {
+      // Add new submission
+      state.submissions.push(submission);
+      io.emit('stateUpdate', state);
+      io.emit('newSubmission', submission);
+    }
   });
   
   socket.on('startSelection', () => {

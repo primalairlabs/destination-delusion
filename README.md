@@ -5,6 +5,7 @@ A real-time web application for guys' groups to randomly select their next trip 
 ## Features
 
 - Real-time submissions visible to all participants
+- **Edit your city choice** anytime before selection starts (using the same name)
 - Context-aware insults that roast old guys about their destination choices
 - Slot machine animation for winner selection
 - Dark, bold, beer-themed aesthetic
@@ -58,10 +59,11 @@ git push heroku main
 
 1. **Submit**: Everyone enters their name and dream city
 2. **Get Roasted**: Receive a brutal, context-aware insult about your chances
-3. **Watch**: See all submissions appear in real-time with scattered cards
-4. **Select**: Only "Mäsi" can trigger the slot machine selection
-5. **Winner**: Random city is chosen and highlighted in gold
-6. **Reset**: Mäsi can reset everything for the next trip
+3. **Edit (Optional)**: Change your city choice anytime before Mäsi starts the selection
+4. **Watch**: See all submissions appear in real-time with scattered cards
+5. **Select**: Only "Mäsi" can trigger the slot machine selection
+6. **Winner**: Random city is chosen and highlighted in gold
+7. **Reset**: Mäsi can reset everything for the next trip
 
 ## Admin Controls
 
@@ -90,7 +92,9 @@ The first person to submit with the name "Mäsi" becomes the admin and gets:
 - No authentication required
 - Designed for single group usage
 - Names must be unique per session
-- Submissions are final (no editing)
+- **You can edit your city choice by resubmitting with the same name**
+- Editing is disabled once Mäsi starts the selection
+- Each edit generates a fresh roast
 
 ---
 

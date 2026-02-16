@@ -495,7 +495,7 @@
       const [city, setCity] = useState('');
       const [error, setError] = useState('');
       const [isMaesi, setIsMaesi] = useState(false);
-      const [hasSubmitted, setHasSubmitted] = useState(false);
+      const [mySubmission, setMySubmission] = useState(null);
       const [showSlotMachine, setShowSlotMachine] = useState(false);
       
       useEffect(() => {
@@ -505,6 +505,16 @@
         newSocket.on('stateUpdate', (newState) => {
           setState(newState);
           setIsMaesi(newSocket.id === newState.maesi);
+          
+          // Check if we have a submission in this state
+          const myExistingSubmission = newState.submissions.find(
+            s => s.socketId === newSocket.id
+          );
+          if (myExistingSubmission) {
+            setMySubmission(myExistingSubmission);
+            setName(myExistingSubmission.name);
+            setCity(myExistingSubmission.city);
+          }
         });
         
         newSocket.on('error', (message) => {
@@ -514,7 +524,13 @@
         
         newSocket.on('newSubmission', (submission) => {
           if (submission.socketId === newSocket.id) {
-            setHasSubmitted(true);
+            setMySubmission(submission);
+          }
+        });
+        
+        newSocket.on('submissionUpdated', (submission) => {
+          if (submission.socketId === newSocket.id) {
+            setMySubmission(submission);
           }
         });
         
@@ -529,7 +545,7 @@
         });
         
         newSocket.on('reset', () => {
-          setHasSubmitted(false);
+          setMySubmission(null);
           setName('');
           setCity('');
         });
@@ -583,6 +599,8 @@
         };
       };
       
+      const isEditingMode = mySubmission && !state.winner;
+      
       return (
         <div className="app-container">
           <div className="header">
@@ -592,10 +610,24 @@
             <p className="subtitle">Where old guys pick their next humiliation</p>
           </div>
           
-          {!hasSubmitted && !state.winner && (
+          {!state.winner && (
             <div className="input-section">
               <form className="input-group" onSubmit={handleSubmit}>
                 {error && <div className="error-message">{error}</div>}
+                {isEditingMode && (
+                  <div style={{
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    border: '1px solid var(--amber)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    fontSize: '14px',
+                    color: 'var(--amber)',
+                    textAlign: 'center'
+                  }}>
+                    ✏️ Editing your submission - change the city and resubmit
+                  </div>
+                )}
                 <input
                   type="text"
                   className="input-field"
@@ -603,6 +635,8 @@
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={30}
+                  disabled={isEditingMode}
+                  style={isEditingMode ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                 />
                 <input
                   type="text"
@@ -613,7 +647,7 @@
                   maxLength={50}
                 />
                 <button type="submit" className="submit-btn">
-                  Submit & Get Roasted
+                  {isEditingMode ? '✏️ Update & Get Roasted Again' : 'Submit & Get Roasted'}
                 </button>
               </form>
             </div>
