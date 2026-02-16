@@ -504,7 +504,6 @@
         
         newSocket.on('stateUpdate', (newState) => {
           setState(newState);
-          setIsMaesi(newSocket.id === newState.maesi);
           
           // Check if we have a submission in this state
           const myExistingSubmission = newState.submissions.find(
@@ -514,6 +513,9 @@
             setMySubmission(myExistingSubmission);
             setName(myExistingSubmission.name);
             setCity(myExistingSubmission.city);
+            
+            // Check if we are Mäsi
+            setIsMaesi(myExistingSubmission.name === 'Mäsi');
           }
         });
         
@@ -525,12 +527,20 @@
         newSocket.on('newSubmission', (submission) => {
           if (submission.socketId === newSocket.id) {
             setMySubmission(submission);
+            // Check if we just became Mäsi
+            if (submission.name === 'Mäsi') {
+              setIsMaesi(true);
+            }
           }
         });
         
         newSocket.on('submissionUpdated', (submission) => {
           if (submission.socketId === newSocket.id) {
             setMySubmission(submission);
+            // Maintain Mäsi status
+            if (submission.name === 'Mäsi') {
+              setIsMaesi(true);
+            }
           }
         });
         
@@ -548,6 +558,7 @@
           setMySubmission(null);
           setName('');
           setCity('');
+          setIsMaesi(false);
         });
         
         return () => newSocket.close();

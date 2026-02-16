@@ -23,7 +23,7 @@ app.use(express.static(join(__dirname, 'public')));
 // In-memory state
 let state = {
   submissions: [],
-  maesi: null,
+  maesiName: null, // Track by name instead of socket ID
   winner: null,
   selectionInProgress: false
 };
@@ -179,8 +179,8 @@ io.on('connection', (socket) => {
     const existingIndex = state.submissions.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
     
     // Check if this is Mäsi and no Mäsi exists yet
-    if (name === 'Mäsi' && !state.maesi) {
-      state.maesi = socket.id;
+    if (name === 'Mäsi' && !state.maesiName) {
+      state.maesiName = 'Mäsi';
     }
     
     // Generate insult (new one each time, even for edits)
@@ -208,8 +208,11 @@ io.on('connection', (socket) => {
   });
   
   socket.on('startSelection', () => {
-    // Only Mäsi can start selection
-    if (socket.id !== state.maesi) {
+    // Find if this user is Mäsi by checking their submission
+    const userSubmission = state.submissions.find(s => s.socketId === socket.id);
+    const isMaesi = userSubmission && userSubmission.name === 'Mäsi';
+    
+    if (!isMaesi) {
       socket.emit('error', 'Only Mäsi can start the selection');
       return;
     }
@@ -233,16 +236,19 @@ io.on('connection', (socket) => {
   });
   
   socket.on('reset', () => {
-    // Only Mäsi can reset
-    if (socket.id !== state.maesi) {
+    // Find if this user is Mäsi by checking their submission
+    const userSubmission = state.submissions.find(s => s.socketId === socket.id);
+    const isMaesi = userSubmission && userSubmission.name === 'Mäsi';
+    
+    if (!isMaesi) {
       socket.emit('error', 'Only Mäsi can reset');
       return;
     }
     
-    const oldMaesiId = state.maesi;
+    const keepMaesiName = state.maesiName;
     state = {
       submissions: [],
-      maesi: oldMaesiId, // Keep Mäsi privilege
+      maesiName: keepMaesiName, // Keep Mäsi privilege
       winner: null,
       selectionInProgress: false
     };
