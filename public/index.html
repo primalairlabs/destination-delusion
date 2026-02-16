@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Destination Delusion</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-darker: #050505;
+      --card-bg: #1a1a1a;
+      --card-border: #2a2a2a;
+      --amber: #fbbf24;
+      --amber-dark: #d97706;
+      --gold: #ffd700;
+      --gold-glow: rgba(255, 215, 0, 0.3);
+      --text: #e5e5e5;
+      --text-dim: #a3a3a3;
+      --danger: #ef4444;
+    }
+    
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(217, 119, 6, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.03"/></svg>');
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    #root {
+      position: relative;
+      z-index: 2;
+    }
+    
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px 20px;
+      animation: fadeInDown 0.8s ease;
+    }
+    
+    .title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 10vw, 96px);
+      color: var(--amber);
+      letter-spacing: 4px;
+      text-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    
+    .beer-emoji {
+      font-size: clamp(32px, 6vw, 56px);
+      display: inline-block;
+      animation: sway 3s ease-in-out infinite;
+    }
+    
+    @keyframes sway {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 18px);
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+    
+    .input-section {
+      max-width: 500px;
+      margin: 0 auto 50px;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+    
+    .input-group {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--bg-darker);
+      border: 2px solid var(--card-border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 16px;
+      font-family: 'Rubik', sans-serif;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .input-field::placeholder {
+      color: var(--text-dim);
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--amber) 0%, var(--amber-dark) 100%);
+      border: none;
+      border-radius: 12px;
+      color: var(--bg-dark);
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Rubik', sans-serif;
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 30px rgba(251, 191, 36, 0.5);
+    }
+    
+    .submit-btn:active {
+      transform: translateY(-1px);
+    }
+    
+    .error-message {
+      background: var(--danger);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      animation: shake 0.5s ease;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    .cards-container {
+      flex: 1;
+      position: relative;
+      min-height: 400px;
+      margin-bottom: 100px;
+    }
+    
+    /* Desktop: Scattered layout */
+    @media (min-width: 769px) {
+      .cards-container {
+        display: block;
+      }
+      
+      .submission-card {
+        position: absolute;
+        width: 280px;
+      }
+    }
+    
+    /* Mobile: List layout */
+    @media (max-width: 768px) {
+      .cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+      }
+      
+      .submission-card {
+        position: relative !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        transform: none !important;
+      }
+    }
+    
+    .submission-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: cardAppear 0.6s ease both;
+    }
+    
+    @keyframes cardAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    .submission-card:hover {
+      transform: translateY(-5px) rotate(0deg) !important;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      border-color: var(--amber);
+    }
+    
+    .submission-card.winner {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2200 100%);
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 40px var(--gold-glow), 0 15px 50px rgba(255, 215, 0, 0.2);
+      animation: winnerGlow 2s ease infinite, cardAppear 0.6s ease both;
+      z-index: 100 !important;
+    }
+    
+    @keyframes winnerGlow {
+      0%, 100% { box-shadow: 0 0 40px var(--gold-glow), 0 15px 50px rgba(255, 215, 0, 0.2); }
+      50% { box-shadow: 0 0 60px var(--gold-glow), 0 15px 60px rgba(255, 215, 0, 0.4); }
+    }
+    
+    .card-name {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--amber);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .winner .card-name {
+      color: var(--gold);
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .card-city {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    
+    .card-insult {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      font-style: italic;
+      border-left: 3px solid var(--amber-dark);
+      padding-left: 12px;
+      margin-top: 12px;
+      animation: fadeIn 0.8s ease 0.4s both;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .winner .card-insult {
+      border-left-color: var(--gold);
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, var(--bg-darker) 80%, transparent);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      z-index: 1000;
+    }
+    
+    .control-btn {
+      padding: 18px 40px;
+      background: linear-gradient(135deg, var(--amber) 0%, var(--amber-dark) 100%);
+      border: none;
+      border-radius: 12px;
+      color: var(--bg-dark);
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Rubik', sans-serif;
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+      animation: fadeInUp 0.8s ease;
+    }
+    
+    .control-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 30px rgba(251, 191, 36, 0.5);
+    }
+    
+    .control-btn.reset {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    }
+    
+    .control-btn.reset:hover {
+      box-shadow: 0 6px 30px rgba(239, 68, 68, 0.5);
+    }
+    
+    .slot-machine-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .slot-machine {
+      display: flex;
+      gap: 20px;
+      padding: 40px;
+      background: var(--card-bg);
+      border: 4px solid var(--amber);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+    
+    .slot-reel {
+      width: 150px;
+      height: 200px;
+      background: var(--bg-darker);
+      border: 3px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .reel-content {
+      animation: spin 0.1s linear infinite;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--amber);
+      text-align: center;
+      padding: 20px;
+      text-transform: uppercase;
+    }
+    
+    @keyframes spin {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100%); }
+    }
+    
+    .reel-content.stopping {
+      animation: spinSlow 0.5s ease-out;
+    }
+    
+    @keyframes spinSlow {
+      from { transform: translateY(0); }
+      to { transform: translateY(-200%); }
+    }
+    
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 16px;
+      }
+      
+      .header {
+        margin-bottom: 30px;
+        padding: 20px 10px;
+      }
+      
+      .input-section {
+        margin-bottom: 30px;
+      }
+      
+      .input-group {
+        padding: 20px;
+      }
+      
+      .slot-machine {
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+      }
+      
+      .slot-reel {
+        width: 100%;
+        height: 120px;
+      }
+      
+      .control-btn {
+        padding: 16px 24px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    
+    function App() {
+      const [socket, setSocket] = useState(null);
+      const [state, setState] = useState({
+        submissions: [],
+        maesi: null,
+        winner: null,
+        selectionInProgress: false
+      });
+      const [name, setName] = useState('');
+      const [city, setCity] = useState('');
+      const [error, setError] = useState('');
+      const [isMaesi, setIsMaesi] = useState(false);
+      const [hasSubmitted, setHasSubmitted] = useState(false);
+      const [showSlotMachine, setShowSlotMachine] = useState(false);
+      
+      useEffect(() => {
+        const newSocket = io();
+        setSocket(newSocket);
+        
+        newSocket.on('stateUpdate', (newState) => {
+          setState(newState);
+          setIsMaesi(newSocket.id === newState.maesi);
+        });
+        
+        newSocket.on('error', (message) => {
+          setError(message);
+          setTimeout(() => setError(''), 5000);
+        });
+        
+        newSocket.on('newSubmission', (submission) => {
+          if (submission.socketId === newSocket.id) {
+            setHasSubmitted(true);
+          }
+        });
+        
+        newSocket.on('selectionStarted', () => {
+          setShowSlotMachine(true);
+        });
+        
+        newSocket.on('winnerSelected', (winner) => {
+          setTimeout(() => {
+            setShowSlotMachine(false);
+          }, 1000);
+        });
+        
+        newSocket.on('reset', () => {
+          setHasSubmitted(false);
+          setName('');
+          setCity('');
+        });
+        
+        return () => newSocket.close();
+      }, []);
+      
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (socket) {
+          socket.emit('submit', { name, city });
+        }
+      };
+      
+      const handleStartSelection = () => {
+        if (socket) {
+          socket.emit('startSelection');
+        }
+      };
+      
+      const handleReset = () => {
+        if (socket && confirm('Reset everything and start fresh?')) {
+          socket.emit('reset');
+        }
+      };
+      
+      const getCardPosition = (index) => {
+        // Random scattered positions for desktop
+        const positions = [
+          { left: '5%', top: '10%', rotate: -5 },
+          { left: '25%', top: '5%', rotate: 3 },
+          { left: '45%', top: '15%', rotate: -2 },
+          { left: '65%', top: '8%', rotate: 4 },
+          { left: '85%', top: '12%', rotate: -3 },
+          { left: '10%', top: '40%', rotate: 2 },
+          { left: '30%', top: '45%', rotate: -4 },
+          { left: '50%', top: '35%', rotate: 5 },
+          { left: '70%', top: '42%', rotate: -2 },
+          { left: '15%', top: '70%', rotate: 3 },
+          { left: '35%', top: '75%', rotate: -3 },
+          { left: '55%', top: '68%', rotate: 4 },
+          { left: '75%', top: '72%', rotate: -5 },
+        ];
+        
+        const pos = positions[index % positions.length];
+        return {
+          left: pos.left,
+          top: pos.top,
+          transform: `rotate(${pos.rotate}deg)`,
+          animationDelay: `${index * 0.1}s`
+        };
+      };
+      
+      return (
+        <div className="app-container">
+          <div className="header">
+            <h1 className="title">
+              <span className="beer-emoji">🍺</span> Destination Delusion <span className="beer-emoji">🍺</span>
+            </h1>
+            <p className="subtitle">Where old guys pick their next humiliation</p>
+          </div>
+          
+          {!hasSubmitted && !state.winner && (
+            <div className="input-section">
+              <form className="input-group" onSubmit={handleSubmit}>
+                {error && <div className="error-message">{error}</div>}
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={30}
+                />
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Dream destination"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  maxLength={50}
+                />
+                <button type="submit" className="submit-btn">
+                  Submit & Get Roasted
+                </button>
+              </form>
+            </div>
+          )}
+          
+          <div className="cards-container">
+            {state.submissions.map((submission, index) => (
+              <div
+                key={index}
+                className={`submission-card ${state.winner?.name === submission.name && state.winner?.city === submission.city ? 'winner' : ''}`}
+                style={window.innerWidth > 768 ? getCardPosition(index) : {}}
+              >
+                <div className="card-name">{submission.name}</div>
+                <div className="card-city">📍 {submission.city}</div>
+                <div className="card-insult">{submission.insult}</div>
+              </div>
+            ))}
+          </div>
+          
+          {isMaesi && !state.winner && state.submissions.length > 0 && (
+            <div className="controls">
+              <button className="control-btn" onClick={handleStartSelection}>
+                🎰 Start Selection
+              </button>
+            </div>
+          )}
+          
+          {isMaesi && state.winner && (
+            <div className="controls">
+              <button className="control-btn reset" onClick={handleReset}>
+                🔄 Reset
+              </button>
+            </div>
+          )}
+          
+          {showSlotMachine && <SlotMachine submissions={state.submissions} />}
+        </div>
+      );
+    }
+    
+    function SlotMachine({ submissions }) {
+      const [spinning, setSpinning] = useState(true);
+      
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          setSpinning(false);
+        }, 6000);
+        
+        return () => clearTimeout(timer);
+      }, []);
+      
+      return (
+        <div className="slot-machine-overlay">
+          <div className="slot-machine">
+            {[0, 1, 2].map((reelIndex) => (
+              <div key={reelIndex} className="slot-reel">
+                <div className={`reel-content ${!spinning ? 'stopping' : ''}`}>
+                  {spinning ? (
+                    <>
+                      {submissions.map((sub, i) => (
+                        <div key={i} style={{ padding: '20px 0' }}>
+                          {sub.city}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div style={{ padding: '80px 10px' }}>
+                      {submissions[Math.floor(Math.random() * submissions.length)]?.city}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
